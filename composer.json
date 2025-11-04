@@ -1,0 +1,24 @@
+{
+  "name": "drupal/rail_score",
+  "description": "Drupal integration for RAIL Score API",
+  "type": "drupal-module",
+  "license": "MIT",
+  "homepage": "https://www.drupal.org/project/rail_score",
+  "support": {
+    "issues": "https://www.drupal.org/project/issues/rail_score",
+    "source": "https://git.drupalcode.org/project/rail_score"
+  },
+  "require": {
+    "php": ">=8.1",
+    "drupal/core": "^9 || ^10 || ^11",
+    "guzzlehttp/guzzle": "^7.0"
+  },
+  "require-dev": {
+    "drupal/core-dev": "^10"
+  },
+  "autoload": {
+    "psr-4": {
+      "Drupal\\rail_score\\": "src/"
+    }
+  }
+}

@@ -1,0 +1,7 @@
+api_key: ''
+base_url: 'https://api.responsibleailabs.ai'
+auto_evaluate: true
+threshold: 7.0
+auto_unpublish: false
+dimensions: []
+enabled_content_types: []

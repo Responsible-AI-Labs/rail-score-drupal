@@ -1,0 +1,141 @@
+{#
+/**
+ * @file
+ * Default theme implementation for RAIL Score widget.
+ *
+ * Available variables:
+ * - score: The overall RAIL Score value (0-10)
+ * - dimensions: Array of dimension scores
+ *   - safety: Safety dimension score
+ *   - privacy: Privacy dimension score
+ *   - fairness: Fairness dimension score
+ *   - transparency: Transparency dimension score
+ *   - accountability: Accountability dimension score
+ *   - reliability: Reliability dimension score
+ *   - legal_compliance: Legal compliance dimension score
+ *   - user_impact: User impact dimension score
+ * - threshold: The configured score threshold
+ *
+ * @see template_preprocess_rail_score_widget()
+ *
+ * @ingroup themeable
+ */
+#}
+
+<div class="rail-score-widget">
+  {% if score %}
+    <div class="widget-header">
+      <h3>{{ 'RAIL Score'|t }}</h3>
+      <p class="widget-description">
+        {{ 'Responsible AI content evaluation score'|t }}
+      </p>
+    </div>
+
+    {# Overall Score Display #}
+    <div class="score-display score-{{ score >= 8 ? 'high' : (score >= (threshold ?: 7) ? 'medium' : 'low') }}">
+      <div class="score-value">{{ score|number_format(1) }}</div>
+      <div class="score-max">/10</div>
+    </div>
+
+    {# Score Status #}
+    <div class="score-status">
+      {% if score >= 8 %}
+        <div class="status-message status-high">
+          <strong>{{ 'Excellent'|t }}</strong>
+          <p>{{ 'This content meets high quality standards.'|t }}</p>
+        </div>
+      {% elseif score >= (threshold ?: 7) %}
+        <div class="status-message status-medium">
+          <strong>{{ 'Good'|t }}</strong>
+          <p>{{ 'This content meets quality standards.'|t }}</p>
+        </div>
+      {% else %}
+        <div class="status-message status-low">
+          <strong>{{ 'Needs Review'|t }}</strong>
+          <p>{{ 'This content is below the quality threshold of @threshold.'|t({'@threshold': threshold ?: 7}) }}</p>
+        </div>
+      {% endif %}
+    </div>
+
+    {# Dimension Breakdown #}
+    {% if dimensions %}
+      <div class="dimensions-section">
+        <h4>{{ 'Dimension Scores'|t }}</h4>
+        <ul class="dimensions-list">
+          {% if dimensions.safety %}
+            <li class="dimension-item">
+              <span class="dimension-name">{{ 'Safety'|t }}</span>
+              <span class="dimension-score">{{ dimensions.safety.score|number_format(1) }}/10</span>
+            </li>
+          {% endif %}
+
+          {% if dimensions.privacy %}
+            <li class="dimension-item">
+              <span class="dimension-name">{{ 'Privacy'|t }}</span>
+              <span class="dimension-score">{{ dimensions.privacy.score|number_format(1) }}/10</span>
+            </li>
+          {% endif %}
+
+          {% if dimensions.fairness %}
+            <li class="dimension-item">
+              <span class="dimension-name">{{ 'Fairness'|t }}</span>
+              <span class="dimension-score">{{ dimensions.fairness.score|number_format(1) }}/10</span>
+            </li>
+          {% endif %}
+
+          {% if dimensions.transparency %}
+            <li class="dimension-item">
+              <span class="dimension-name">{{ 'Transparency'|t }}</span>
+              <span class="dimension-score">{{ dimensions.transparency.score|number_format(1) }}/10</span>
+            </li>
+          {% endif %}
+
+          {% if dimensions.accountability %}
+            <li class="dimension-item">
+              <span class="dimension-name">{{ 'Accountability'|t }}</span>
+              <span class="dimension-score">{{ dimensions.accountability.score|number_format(1) }}/10</span>
+            </li>
+          {% endif %}
+
+          {% if dimensions.reliability %}
+            <li class="dimension-item">
+              <span class="dimension-name">{{ 'Reliability'|t }}</span>
+              <span class="dimension-score">{{ dimensions.reliability.score|number_format(1) }}/10</span>
+            </li>
+          {% endif %}
+
+          {% if dimensions.legal_compliance %}
+            <li class="dimension-item">
+              <span class="dimension-name">{{ 'Legal Compliance'|t }}</span>
+              <span class="dimension-score">{{ dimensions.legal_compliance.score|number_format(1) }}/10</span>
+            </li>
+          {% endif %}
+
+          {% if dimensions.user_impact %}
+            <li class="dimension-item">
+              <span class="dimension-name">{{ 'User Impact'|t }}</span>
+              <span class="dimension-score">{{ dimensions.user_impact.score|number_format(1) }}/10</span>
+            </li>
+          {% endif %}
+        </ul>
+      </div>
+    {% endif %}
+
+    {# Additional Info #}
+    <div class="widget-footer">
+      <p class="powered-by">
+        {{ 'Powered by'|t }}
+        <a href="https://responsibleailabs.ai" target="_blank" rel="noopener">
+          {{ 'RAIL Score API'|t }}
+        </a>
+      </p>
+    </div>
+  {% else %}
+    <div class="widget-empty">
+      <p>{{ 'No RAIL Score available for this content.'|t }}</p>
+      <p class="help-text">
+        {{ 'Save the content to trigger evaluation.'|t }}
+      </p>
+    </div>
+  {% endif %}
+</div>

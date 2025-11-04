@@ -1,0 +1,16 @@
+name: 'RAIL Score'
+type: module
+description: 'Integrate RAIL Score API for responsible AI content evaluation and moderation'
+core_version_requirement: ^9 || ^10 || ^11
+package: 'Artificial Intelligence'
+
+dependencies:
+  - drupal:field
+  - drupal:node
+  - drupal:user
+
+configure: rail_score.settings
+
+# Optional but recommended
+project: 'rail_score'
+version: '1.0.0'

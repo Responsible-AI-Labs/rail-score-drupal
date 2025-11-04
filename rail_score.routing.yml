@@ -1,0 +1,15 @@
+rail_score.settings:
+  path: '/admin/config/content/rail-score'
+  defaults:
+    _form: '\Drupal\rail_score\Form\RailScoreConfigForm'
+    _title: 'RAIL Score Settings'
+  requirements:
+    _permission: 'administer rail_score'
+
+rail_score.dashboard:
+  path: '/admin/reports/rail-score'
+  defaults:
+    _controller: '\Drupal\rail_score\Controller\RailScoreDashboardController::dashboard'
+    _title: 'RAIL Score Dashboard'
+  requirements:
+    _permission: 'view rail_score dashboard'

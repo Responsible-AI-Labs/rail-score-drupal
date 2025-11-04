@@ -1,0 +1,10 @@
+services:
+  rail_score.client:
+    class: Drupal\rail_score\RailScoreClient
+    arguments: ['@config.factory', '@http_client', '@logger.factory']
+
+  rail_score.entity_subscriber:
+    class: Drupal\rail_score\EventSubscriber\EntityEventSubscriber
+    arguments: ['@rail_score.client', '@config.factory', '@messenger']
+    tags:
+      - { name: event_subscriber }

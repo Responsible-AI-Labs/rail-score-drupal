@@ -1,0 +1,15 @@
+# Admin menu links for RAIL Score module
+
+rail_score.settings:
+  title: 'RAIL Score'
+  description: 'Configure RAIL Score API and evaluation settings'
+  parent: system.admin_config_content
+  route_name: rail_score.settings
+  weight: 10
+
+rail_score.dashboard:
+  title: 'RAIL Score'
+  description: 'View RAIL Score statistics and recent evaluations'
+  parent: system.admin_reports
+  route_name: rail_score.dashboard
+  weight: 10
