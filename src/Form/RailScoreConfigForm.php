@@ -2,6 +2,8 @@
 
 namespace Drupal\rail_score\Form;
 
+use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Config\TypedConfigManagerInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\rail_score\RailScoreClient;
@@ -24,11 +26,23 @@ class RailScoreConfigForm extends ConfigFormBase {
    *
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
    *   The config factory.
-   * @param \Drupal\rail_score\RailScoreClient $rail_score_client
+   * @param \Drupal\Core\Config\TypedConfigManagerInterface|null $typed_config_manager
+   *   The typed config manager (Drupal 11+).
+   * @param \Drupal\rail_score\RailScoreClient|null $rail_score_client
    *   The RAIL Score client.
    */
-  public function __construct($config_factory, RailScoreClient $rail_score_client) {
-    parent::__construct($config_factory);
+  public function __construct(
+    ConfigFactoryInterface $config_factory,
+    ?TypedConfigManagerInterface $typed_config_manager = NULL,
+    ?RailScoreClient $rail_score_client = NULL
+  ) {
+    // Support both Drupal 9/10 (1 param) and Drupal 11 (2 params).
+    if ($typed_config_manager) {
+      parent::__construct($config_factory, $typed_config_manager);
+    }
+    else {
+      parent::__construct($config_factory);
+    }
     $this->railScoreClient = $rail_score_client;
   }
 
@@ -36,8 +50,12 @@ class RailScoreConfigForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container) {
+    // Check if config.typed service exists (Drupal 11+).
+    $typed_config = $container->has('config.typed') ? $container->get('config.typed') : NULL;
+
     return new static(
       $container->get('config.factory'),
+      $typed_config,
       $container->get('rail_score.client')
     );
   }
