@@ -201,7 +201,11 @@ class RailScoreConfigForm extends ConfigFormBase {
   public function testConnectionCallback(array &$form, FormStateInterface $form_state) {
     $element = $form['api_settings']['connection_result'];
 
-    if ($this->railScoreClient->testConnection()) {
+    // Get values from the form (not saved config).
+    $api_key = $form_state->getValue('api_key');
+    $base_url = $form_state->getValue('base_url');
+
+    if ($this->railScoreClient->testConnection($api_key, $base_url)) {
       $element['#markup'] = '<div class="messages messages--status">' . $this->t('Connection successful!') . '</div>';
     }
     else {

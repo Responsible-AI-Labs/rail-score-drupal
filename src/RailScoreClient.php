@@ -212,21 +212,86 @@ class RailScoreClient {
   /**
    * Test API connection.
    *
+   * @param string|null $api_key
+   *   Optional API key to test. If not provided, uses saved config.
+   * @param string|null $base_url
+   *   Optional base URL to test. If not provided, uses saved config.
+   *
    * @return bool
    *   TRUE if connection is successful, FALSE otherwise.
    */
-  public function testConnection() {
+  public function testConnection($api_key = NULL, $base_url = NULL) {
     $config = $this->configFactory->get('rail_score.settings');
-    $api_key = $config->get('api_key');
+
+    // Use provided values or fall back to saved config.
+    if ($api_key === NULL) {
+      $api_key = $config->get('api_key');
+    }
+    if ($base_url === NULL) {
+      $base_url = $config->get('base_url') ?: 'https://api.responsibleailabs.ai';
+    }
 
     if (empty($api_key)) {
+      $this->logger->error('[RAIL Score] ✗ Connection test failed: API key is empty');
       return FALSE;
     }
 
-    // Try to get usage stats as a connection test.
-    $result = $this->getUsageStats();
+    try {
+      // First, check if API is online (no auth required).
+      $response = $this->httpClient->request('GET', $base_url . '/', [
+        'timeout' => 10,
+        'http_errors' => FALSE,
+      ]);
 
-    return $result !== FALSE;
+      if ($response->getStatusCode() !== 200) {
+        // Try health check endpoint as fallback.
+        $response = $this->httpClient->request('GET', $base_url . '/health/check', [
+          'timeout' => 10,
+          'http_errors' => FALSE,
+        ]);
+
+        if ($response->getStatusCode() !== 200) {
+          $this->logger->error('[RAIL Score] ✗ API is not accessible at @url', [
+            '@url' => $base_url,
+          ]);
+          return FALSE;
+        }
+      }
+
+      // Verify the API key using the /verify endpoint.
+      $response = $this->httpClient->request('POST', $base_url . '/verify', [
+        'headers' => [
+          'Authorization' => 'Bearer ' . $api_key,
+        ],
+        'timeout' => 10,
+        'http_errors' => FALSE,
+      ]);
+
+      $status_code = $response->getStatusCode();
+      $body = json_decode($response->getBody()->getContents(), TRUE);
+
+      if ($status_code === 200 && isset($body['status']) && $body['status'] === 'verified') {
+        $this->logger->notice('[RAIL Score] ✓ Connection test successful - API key verified');
+        return TRUE;
+      }
+      elseif ($status_code === 401 || $status_code === 403 || (isset($body['detail']) && stripos($body['detail'], 'invalid') !== FALSE)) {
+        $this->logger->error('[RAIL Score] ✗ API key verification failed: Invalid or inactive API key');
+        return FALSE;
+      }
+      else {
+        $this->logger->error('[RAIL Score] ✗ Unexpected response from API: @status @body', [
+          '@status' => $status_code,
+          '@body' => json_encode($body),
+        ]);
+        return FALSE;
+      }
+    }
+    catch (GuzzleException $e) {
+      $this->logger->error('[RAIL Score] ✗ Connection test failed: @message', [
+        '@message' => $e->getMessage(),
+      ]);
+      return FALSE;
+    }
   }
 
 }

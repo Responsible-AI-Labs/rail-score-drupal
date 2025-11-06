@@ -5,6 +5,40 @@ All notable changes to the RAIL Score Drupal module will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [1.0.2] - 2025-11-06
+
+### Fixed
+- **Test Connection Button**: Fixed AJAX callback to use form values instead of saved configuration when testing API connection. The "Test Connection" button now properly tests with the API key and base URL currently entered in the form fields, not previously saved values. (Issue: Connection test was always using old/empty credentials)
+- **API Connection Testing**: Updated `testConnection()` method to support the correct RAIL Score API endpoints due to upstream changes by Responsible AI Labs:
+  - Now checks root endpoint (`/`) to verify API availability (no authentication required)
+  - Falls back to `/health/check` endpoint if root endpoint is unavailable
+  - Uses `/verify` endpoint for API key validation with proper authentication
+  - Improved error handling and logging for different response scenarios (200, 401, 403, 404)
+  - Better timeout handling (10 seconds instead of 30)
+
+### Changed
+- **RailScoreClient::testConnection()**: Method signature updated to accept optional `$api_key` and `$base_url` parameters, allowing both form-based testing and programmatic testing
+- Enhanced error logging with clearer messages to help diagnose connection issues
+- Added `http_errors: FALSE` option to handle non-200 responses gracefully
+- Updated to use current RAIL Score API endpoints as specified by Responsible AI Labs
+
+### Technical Details
+- **Modified Files**:
+  - `src/Form/RailScoreConfigForm.php` (lines 204-208)
+  - `src/RailScoreClient.php` (lines 215-295)
+- **Affected Version**: 1.0.0
+- **External Dependency**: RAIL Score API endpoint changes by Responsible AI Labs
+
+### Upgrade Notes
+- No database updates required
+- No configuration changes needed
+- Fully backward compatible with 1.0.0
+- Clear Drupal cache after updating: `drush cr`
+
+
+## [1.0.1] - Minor Fix
+
 ## [1.0.0] - 2024-11-04
 
 ### Added
