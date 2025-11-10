@@ -83,7 +83,7 @@ class RailScoreClient {
 
     // Prepare dimensions if configured.
     $dimensions = $config->get('dimensions') ?: [];
-    if (!empty($dimensions)) {
+    if (!empty($dimensions) && !isset($options['dimensions'])) {
       $options['dimensions'] = array_values(array_filter($dimensions));
     }
 
@@ -92,7 +92,7 @@ class RailScoreClient {
     ]);
 
     try {
-      $response = $this->httpClient->request('POST', $base_url . '/v1/evaluation/basic', [
+      $response = $this->httpClient->request('POST', $base_url . '/railscore/v1/score/basic', [
         'headers' => [
           'Content-Type' => 'application/json',
           'Authorization' => 'Bearer ' . $api_key,
