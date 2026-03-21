@@ -6,7 +6,7 @@ This document verifies all Drupal APIs used in the RAIL Score module are compati
 
 | Component | Drupal 9 | Drupal 10 | Drupal 11 | Notes |
 |-----------|----------|-----------|-----------|-------|
-| **Core Requirements** | ✅ | ✅ | ✅ | PHP 8.1+ |
+| **Core Requirements** | ✅ | ✅ | ✅ | PHP 7.4+ (8.1+ recommended) |
 | **Configuration API** | ✅ | ✅ | ✅ | Stable |
 | **Entity API** | ✅ | ✅ | ✅ | Stable |
 | **Form API** | ✅ | ✅ | ✅ | Stable |
@@ -519,6 +519,6 @@ If you encounter compatibility issues:
 
 ---
 
-**Last Updated:** 2024-11-04
-**Module Version:** 1.0.0
+**Last Updated:** 2026-03-21
+**Module Version:** 1.0.4
 **Compatibility Verified:** Drupal 9/10/11

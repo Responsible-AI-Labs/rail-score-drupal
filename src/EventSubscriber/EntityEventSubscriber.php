@@ -6,6 +6,8 @@ use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Messenger\MessengerInterface;
 use Drupal\node\NodeInterface;
+use Drupal\rail_score\Logger\RailScoreAuditLogger;
+use Drupal\rail_score\Queue\RailScoreReviewQueue;
 use Drupal\rail_score\RailScoreClient;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Drupal\Core\Entity\EntityTypeEvents;
@@ -40,6 +42,20 @@ class EntityEventSubscriber implements EventSubscriberInterface {
   protected $messenger;
 
   /**
+   * The human review queue.
+   *
+   * @var \Drupal\rail_score\Queue\RailScoreReviewQueue
+   */
+  protected $reviewQueue;
+
+  /**
+   * The audit logger.
+   *
+   * @var \Drupal\rail_score\Logger\RailScoreAuditLogger
+   */
+  protected $auditLogger;
+
+  /**
    * Constructs an EntityEventSubscriber object.
    *
    * @param \Drupal\rail_score\RailScoreClient $rail_score_client
@@ -48,15 +64,23 @@ class EntityEventSubscriber implements EventSubscriberInterface {
    *   The config factory.
    * @param \Drupal\Core\Messenger\MessengerInterface $messenger
    *   The messenger service.
+   * @param \Drupal\rail_score\Queue\RailScoreReviewQueue $review_queue
+   *   The human review queue.
+   * @param \Drupal\rail_score\Logger\RailScoreAuditLogger $audit_logger
+   *   The audit logger.
    */
   public function __construct(
     RailScoreClient $rail_score_client,
     ConfigFactoryInterface $config_factory,
-    MessengerInterface $messenger
+    MessengerInterface $messenger,
+    RailScoreReviewQueue $review_queue,
+    RailScoreAuditLogger $audit_logger
   ) {
     $this->railScoreClient = $rail_score_client;
     $this->configFactory = $config_factory;
     $this->messenger = $messenger;
+    $this->reviewQueue = $review_queue;
+    $this->auditLogger = $audit_logger;
   }
 
   /**
@@ -114,7 +138,8 @@ class EntityEventSubscriber implements EventSubscriberInterface {
     }
 
     // Evaluate with RAIL Score.
-    $result = $this->railScoreClient->evaluate($content);
+    $eval_options = ['mode' => $config->get('mode') ?: 'basic'];
+    $result = $this->railScoreClient->evaluate($content, $eval_options);
 
     if ($result && isset($result['result']['rail_score']['score'])) {
       $score = (float) $result['result']['rail_score']['score'];
@@ -125,7 +150,7 @@ class EntityEventSubscriber implements EventSubscriberInterface {
       }
 
       // Check threshold.
-      $threshold = (float) $config->get('threshold') ?? 7.0;
+      $threshold = (float) ($config->get('threshold') ?? 7.0);
 
       if ($score < $threshold) {
         $this->messenger->addWarning(
@@ -152,9 +177,9 @@ class EntityEventSubscriber implements EventSubscriberInterface {
       }
 
       // Log dimension scores if available.
-      if (isset($result['result']['dimensions'])) {
+      if (isset($result['result']['dimension_scores'])) {
         $dimension_scores = [];
-        foreach ($result['result']['dimensions'] as $dimension => $data) {
+        foreach ($result['result']['dimension_scores'] as $dimension => $data) {
           if (isset($data['score'])) {
             $dimension_scores[] = ucfirst($dimension) . ': ' . number_format($data['score'], 1);
           }
@@ -165,6 +190,40 @@ class EntityEventSubscriber implements EventSubscriberInterface {
             '@title' => $entity->label(),
             '@scores' => implode(', ', $dimension_scores),
           ]);
+        }
+      }
+
+      // Human review queue: flag any dimension scoring below review threshold.
+      // Uses a separate configurable low threshold distinct from the publish
+      // threshold so borderline content is flagged without being blocked.
+      $review_threshold = (float) ($config->get('review_queue_threshold') ?? RailScoreReviewQueue::DEFAULT_THRESHOLD);
+      $this->reviewQueue->checkAndEnqueue(
+        $result,
+        substr($content, 0, 200),
+        $review_threshold,
+        $score < $threshold,
+        [],
+        $entity->getEntityTypeId(),
+        (int) $entity->id()
+      );
+
+      // Compliance check: run after eval if compliance checking is enabled.
+      if ($config->get('enable_compliance')) {
+        $compliance_result = $this->railScoreClient->checkCompliance($content);
+        if ($compliance_result) {
+          $this->auditLogger->logComplianceResult(
+            $compliance_result,
+            substr($content, 0, 200)
+          );
+          $compliance_threshold = (float) ($config->get('compliance_threshold') ?? 5.0);
+          $this->auditLogger->logComplianceIncident(
+            $compliance_result,
+            $compliance_threshold,
+            [
+              'entity_type' => $entity->getEntityTypeId(),
+              'entity_id' => (int) $entity->id(),
+            ]
+          );
         }
       }
     }

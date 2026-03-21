@@ -13,3 +13,21 @@ rail_score.dashboard:
     _title: 'RAIL Score Dashboard'
   requirements:
     _permission: 'view rail_score dashboard'
+
+rail_score.incident_action:
+  path: '/admin/reports/rail-score/incident/{incident_id}/{action}'
+  defaults:
+    _controller: '\Drupal\rail_score\Controller\RailScoreDashboardController::incidentAction'
+    _title: 'Update Incident Status'
+  requirements:
+    _permission: 'manage rail_score incidents'
+    action: '^(acknowledged|resolved)$'
+
+rail_score.review_item_action:
+  path: '/admin/reports/rail-score/review/{item_id}/{action}'
+  defaults:
+    _controller: '\Drupal\rail_score\Controller\RailScoreDashboardController::reviewItemAction'
+    _title: 'Update Review Item Status'
+  requirements:
+    _permission: 'manage rail_score review queue'
+    action: '^(reviewed|dismissed)$'

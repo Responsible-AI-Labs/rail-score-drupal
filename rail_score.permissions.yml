@@ -10,3 +10,13 @@ view rail_score dashboard:
 evaluate content with rail_score:
   title: 'Evaluate content with RAIL Score'
   description: 'Manually trigger content evaluation'
+
+manage rail_score incidents:
+  title: 'Manage RAIL Score incidents'
+  description: 'Acknowledge and resolve open RAIL Score incidents'
+  restrict access: true
+
+manage rail_score review queue:
+  title: 'Manage RAIL Score review queue'
+  description: 'Mark review queue items as reviewed or dismissed'
+  restrict access: true

@@ -9,8 +9,13 @@ dependencies:
   - drupal:node
   - drupal:user
 
+# Optional: install drupal/ai to enable automatic scoring of AI-generated
+# responses from any registered AI provider.
+suggests:
+  - ai:ai
+
 configure: rail_score.settings
 
 # Optional but recommended
 project: 'rail_score'
-version: '1.0.0'
+version: '1.0.4'

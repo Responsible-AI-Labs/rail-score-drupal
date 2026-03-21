@@ -25,10 +25,11 @@ function rail_score_help($route_name, RouteMatchInterface $route_match) {
       $output .= '<ul>';
       $output .= '<li>' . t('Automatic content evaluation on save') . '</li>';
       $output .= '<li>' . t('Configurable score thresholds') . '</li>';
-      $output .= '<li>' . t('Multiple evaluation dimensions (safety, privacy, fairness, etc.)') . '</li>';
+      $output .= '<li>' . t('Multiple evaluation dimensions: safety, privacy, fairness, transparency, accountability, reliability, inclusivity, user_impact') . '</li>';
+      $output .= '<li>' . t('Basic and deep evaluation modes') . '</li>';
       $output .= '<li>' . t('Dashboard with usage statistics') . '</li>';
       $output .= '<li>' . t('Auto-unpublish low-scoring content') . '</li>';
-      $output .= '<li>' . t('GDPR compliance checking') . '</li>';
+      $output .= '<li>' . t('Compliance checking (GDPR, CCPA, HIPAA, EU AI Act, India DPDP, India AI Gov)') . '</li>';
       $output .= '</ul>';
       $output .= '<h3>' . t('Configuration') . '</h3>';
       $output .= '<p>' . t('Configure the module at <a href="@url">RAIL Score Settings</a>.', [
@@ -54,11 +55,6 @@ function rail_score_help($route_name, RouteMatchInterface $route_match) {
 function rail_score_entity_presave(EntityInterface $entity) {
   // Only process nodes.
   if (!$entity instanceof NodeInterface) {
-    return;
-  }
-
-  // Skip if entity is being deleted.
-  if ($entity->isNew() === FALSE && $entity->get('status')->value === NULL) {
     return;
   }
 
