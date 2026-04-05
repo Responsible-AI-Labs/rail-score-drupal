@@ -1,0 +1,391 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the RAIL Score module.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function rail_score_schema() {
+  $schema = [];
+
+  // Structured audit log — one row per API call (eval, compliance, usage).
+  // Equivalent to the Python SDK's OpenTelemetry span + metrics recording.
+  $schema['rail_score_audit_log'] = [
+    'description' => 'Structured audit log of every RAIL Score API request.',
+    'fields' => [
+      'id' => [
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => 'Auto-increment primary key.',
+      ],
+      'timestamp' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Unix timestamp when the request was made.',
+      ],
+      'operation' => [
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Operation type: eval, compliance, usage, health.',
+      ],
+      'mode' => [
+        'type' => 'varchar',
+        'length' => 16,
+        'not null' => FALSE,
+        'description' => 'Evaluation mode: basic or deep.',
+      ],
+      'domain' => [
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => FALSE,
+        'description' => 'Evaluation domain (general, healthcare, finance, etc.).',
+      ],
+      'content_length' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+        'description' => 'Character length of the evaluated content.',
+      ],
+      'score' => [
+        'type' => 'float',
+        'not null' => FALSE,
+        'description' => 'Overall RAIL score returned (0–10).',
+      ],
+      'confidence' => [
+        'type' => 'float',
+        'not null' => FALSE,
+        'description' => 'Overall confidence value (0–1).',
+      ],
+      'from_cache' => [
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Whether the result was served from the API cache.',
+      ],
+      'duration_ms' => [
+        'type' => 'float',
+        'not null' => FALSE,
+        'description' => 'Request round-trip duration in milliseconds.',
+      ],
+      'dimension_scores' => [
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => FALSE,
+        'description' => 'JSON-encoded per-dimension scores keyed by dimension name.',
+      ],
+      'framework' => [
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => FALSE,
+        'description' => 'Compliance framework(s) evaluated (e.g. gdpr, gdpr,ccpa).',
+      ],
+      'success' => [
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 1,
+        'description' => 'Whether the API call succeeded.',
+      ],
+      'error_code' => [
+        'type' => 'int',
+        'not null' => FALSE,
+        'description' => 'HTTP status code on failure (400, 401, 429, etc.).',
+      ],
+      'error_message' => [
+        'type' => 'varchar',
+        'length' => 512,
+        'not null' => FALSE,
+        'description' => 'Human-readable error message on failure.',
+      ],
+      'entity_type' => [
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => FALSE,
+        'description' => 'Drupal entity type that triggered the evaluation.',
+      ],
+      'entity_id' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+        'description' => 'Drupal entity ID that triggered the evaluation.',
+      ],
+      'uid' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Drupal user ID who triggered the evaluation.',
+      ],
+    ],
+    'primary key' => ['id'],
+    'indexes' => [
+      'timestamp' => ['timestamp'],
+      'operation' => ['operation'],
+      'entity' => ['entity_type', 'entity_id'],
+      'success' => ['success'],
+    ],
+  ];
+
+  // Incident log — raised when scores or compliance breach thresholds.
+  // Equivalent to the Python SDK's IncidentLogger records.
+  $schema['rail_score_incidents'] = [
+    'description' => 'Incidents raised when RAIL scores or compliance results breach thresholds.',
+    'fields' => [
+      'id' => [
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => 'Auto-increment primary key.',
+      ],
+      'incident_id' => [
+        'type' => 'varchar',
+        'length' => 24,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Unique incident identifier (inc_<12-char hex>).',
+      ],
+      'timestamp' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Unix timestamp when the incident was raised.',
+      ],
+      'incident_type' => [
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Type: score_breach, compliance_violation, policy_violation.',
+      ],
+      'severity' => [
+        'type' => 'varchar',
+        'length' => 16,
+        'not null' => TRUE,
+        'default' => 'high',
+        'description' => 'Severity: critical, high, medium, low.',
+      ],
+      'status' => [
+        'type' => 'varchar',
+        'length' => 16,
+        'not null' => TRUE,
+        'default' => 'open',
+        'description' => 'Status: open, acknowledged, resolved.',
+      ],
+      'title' => [
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Short human-readable incident title.',
+      ],
+      'description' => [
+        'type' => 'text',
+        'size' => 'medium',
+        'not null' => FALSE,
+        'description' => 'Full description of what triggered the incident.',
+      ],
+      'framework' => [
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => FALSE,
+        'description' => 'Compliance framework involved, if applicable.',
+      ],
+      'score' => [
+        'type' => 'float',
+        'not null' => FALSE,
+        'description' => 'The score that triggered the incident.',
+      ],
+      'threshold' => [
+        'type' => 'float',
+        'not null' => FALSE,
+        'description' => 'The threshold that was breached.',
+      ],
+      'affected_dimensions' => [
+        'type' => 'varchar',
+        'length' => 512,
+        'not null' => FALSE,
+        'description' => 'Comma-separated list of affected RAIL dimensions.',
+      ],
+      'entity_type' => [
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => FALSE,
+        'description' => 'Drupal entity type related to this incident.',
+      ],
+      'entity_id' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+        'description' => 'Drupal entity ID related to this incident.',
+      ],
+      'metadata' => [
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => FALSE,
+        'description' => 'JSON-encoded extra metadata.',
+      ],
+      'uid' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Drupal user ID who triggered the evaluation.',
+      ],
+    ],
+    'primary key' => ['id'],
+    'unique keys' => [
+      'incident_id' => ['incident_id'],
+    ],
+    'indexes' => [
+      'status' => ['status'],
+      'severity' => ['severity'],
+      'timestamp' => ['timestamp'],
+      'incident_type' => ['incident_type'],
+    ],
+  ];
+
+  // Human review queue — per-dimension items flagged for manual review.
+  // Equivalent to the Python SDK's HumanReviewQueue, persisted to DB so
+  // items survive across requests and can be actioned by any admin.
+  $schema['rail_score_review_queue'] = [
+    'description' => 'Human review queue for RAIL dimensions that scored below the review threshold.',
+    'fields' => [
+      'id' => [
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => 'Auto-increment primary key.',
+      ],
+      'item_id' => [
+        'type' => 'varchar',
+        'length' => 24,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Unique item identifier (rev_<12-char hex>).',
+      ],
+      'timestamp' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Unix timestamp when the item was enqueued.',
+      ],
+      'dimension' => [
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'RAIL dimension that triggered the review.',
+      ],
+      'score' => [
+        'type' => 'float',
+        'not null' => TRUE,
+        'description' => 'The dimension score that breached the threshold.',
+      ],
+      'threshold' => [
+        'type' => 'float',
+        'not null' => TRUE,
+        'description' => 'The threshold configured when the item was enqueued.',
+      ],
+      'status' => [
+        'type' => 'varchar',
+        'length' => 16,
+        'not null' => TRUE,
+        'default' => 'pending',
+        'description' => 'Status: pending, reviewed, dismissed.',
+      ],
+      'content_preview' => [
+        'type' => 'varchar',
+        'length' => 200,
+        'not null' => FALSE,
+        'description' => 'First 200 characters of the evaluated content.',
+      ],
+      'explanation' => [
+        'type' => 'text',
+        'size' => 'medium',
+        'not null' => FALSE,
+        'description' => 'Per-dimension explanation from deep eval, if available.',
+      ],
+      'issues' => [
+        'type' => 'varchar',
+        'length' => 512,
+        'not null' => FALSE,
+        'description' => 'Comma-separated issue tags returned for this dimension.',
+      ],
+      'incident_id' => [
+        'type' => 'varchar',
+        'length' => 24,
+        'not null' => FALSE,
+        'description' => 'Linked incident ID if one was raised.',
+      ],
+      'entity_type' => [
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => FALSE,
+        'description' => 'Drupal entity type that was evaluated.',
+      ],
+      'entity_id' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+        'description' => 'Drupal entity ID that was evaluated.',
+      ],
+      'metadata' => [
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => FALSE,
+        'description' => 'JSON-encoded extra metadata.',
+      ],
+      'uid' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Drupal user ID who triggered the evaluation.',
+      ],
+    ],
+    'primary key' => ['id'],
+    'unique keys' => [
+      'item_id' => ['item_id'],
+    ],
+    'indexes' => [
+      'status' => ['status'],
+      'dimension' => ['dimension'],
+      'timestamp' => ['timestamp'],
+      'entity' => ['entity_type', 'entity_id'],
+    ],
+  ];
+
+  return $schema;
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function rail_score_uninstall() {
+  \Drupal::configFactory()->getEditable('rail_score.settings')->delete();
+}
+
+/**
+ * Add telemetry tables: audit log, incidents, and human review queue.
+ */
+function rail_score_update_9001() {
+  $schema = \Drupal::database()->schema();
+  $module_schema = rail_score_schema();
+
+  foreach (['rail_score_audit_log', 'rail_score_incidents', 'rail_score_review_queue'] as $table) {
+    if (!$schema->tableExists($table)) {
+      $schema->createTable($table, $module_schema[$table]);
+    }
+  }
+}

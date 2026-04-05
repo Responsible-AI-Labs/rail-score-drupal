@@ -1,0 +1,139 @@
+{#
+/**
+ * @file
+ * Default theme implementation for RAIL Score dashboard.
+ *
+ * Available variables:
+ * - stats: Usage statistics array from the API
+ *   - total_records: Total number of evaluations
+ *   - total_credits_used: Total API credits consumed
+ * - recent_evaluations: Array of recent evaluations
+ *   - title: Content title
+ *   - type: Content type
+ *   - score: RAIL Score value
+ *   - changed: Last modified timestamp
+ *   - url: URL to view the content
+ *
+ * @see template_preprocess_rail_score_dashboard()
+ *
+ * @ingroup themeable
+ */
+#}
+
+<div class="rail-score-dashboard">
+  <div class="dashboard-header">
+    <h2>{{ 'RAIL Score Dashboard'|t }}</h2>
+    <p class="dashboard-intro">
+      {{ 'Monitor your content quality with RAIL Score AI evaluation metrics.'|t }}
+    </p>
+  </div>
+
+  {# API Statistics Section #}
+  {% if stats %}
+    <div class="stats-section">
+      <h3>{{ 'API Usage Statistics'|t }}</h3>
+      <div class="stats-summary">
+        <div class="stat-item">
+          <strong>{{ 'Total Evaluations'|t }}</strong>
+          <div class="stat-value">{{ stats.total_records|default(0) }}</div>
+        </div>
+        <div class="stat-item">
+          <strong>{{ 'Credits Used'|t }}</strong>
+          <div class="stat-value">{{ stats.total_credits_used|default(0) }}</div>
+        </div>
+        {% if stats.remaining_credits %}
+          <div class="stat-item">
+            <strong>{{ 'Credits Remaining'|t }}</strong>
+            <div class="stat-value">{{ stats.remaining_credits }}</div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  {% else %}
+    <div class="messages messages--warning">
+      {{ 'Unable to retrieve API statistics. Please check your API configuration at'|t }}
+      <a href="{{ path('rail_score.settings') }}">{{ 'RAIL Score Settings'|t }}</a>.
+    </div>
+  {% endif %}
+
+  {# Recent Evaluations Section #}
+  <div class="recent-evaluations-section">
+    <h3>{{ 'Recent Evaluations'|t }}</h3>
+
+    {% if recent_evaluations %}
+      <div class="table-responsive">
+        <table class="evaluations-table">
+          <thead>
+            <tr>
+              <th>{{ 'Title'|t }}</th>
+              <th>{{ 'Content Type'|t }}</th>
+              <th>{{ 'Score'|t }}</th>
+              <th>{{ 'Date'|t }}</th>
+              <th>{{ 'Actions'|t }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for evaluation in recent_evaluations %}
+              <tr class="evaluation-row {% if evaluation.score < 7 %}warning{% endif %}">
+                <td class="title-cell">
+                  <a href="{{ evaluation.url }}">{{ evaluation.title }}</a>
+                </td>
+                <td class="type-cell">
+                  {{ evaluation.type }}
+                </td>
+                <td class="score-cell">
+                  <span class="score-badge score-{{ evaluation.score >= 8 ? 'high' : (evaluation.score >= 7 ? 'medium' : 'low') }}">
+                    {{ evaluation.score|number_format(1) }}/10
+                  </span>
+                </td>
+                <td class="date-cell">
+                  {{ evaluation.changed|format_date('short') }}
+                </td>
+                <td class="actions-cell">
+                  <a href="{{ evaluation.url }}" class="button button--small">
+                    {{ 'View'|t }}
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="evaluations-legend">
+        <h4>{{ 'Score Legend'|t }}</h4>
+        <ul>
+          <li><span class="score-badge score-high">8.0+</span> {{ 'High Quality - Meets all standards'|t }}</li>
+          <li><span class="score-badge score-medium">7.0-7.9</span> {{ 'Good Quality - Minor improvements suggested'|t }}</li>
+          <li><span class="score-badge score-low">&lt; 7.0</span> {{ 'Needs Review - Below threshold'|t }}</li>
+        </ul>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <p>{{ 'No content has been evaluated yet.'|t }}</p>
+        <p>
+          {{ 'Get started by'|t }}
+          <a href="{{ path('rail_score.settings') }}">{{ 'configuring RAIL Score'|t }}</a>
+          {{ 'and enabling automatic evaluation for your content types.'|t }}
+        </p>
+      </div>
+    {% endif %}
+  </div>
+
+  {# Quick Actions #}
+  <div class="dashboard-actions">
+    <h3>{{ 'Quick Actions'|t }}</h3>
+    <ul class="action-links">
+      <li>
+        <a href="{{ path('rail_score.settings') }}" class="button button--primary">
+          {{ 'Configure Settings'|t }}
+        </a>
+      </li>
+      <li>
+        <a href="/admin/content" class="button">
+          {{ 'View All Content'|t }}
+        </a>
+      </li>
+    </ul>
+  </div>
+</div>

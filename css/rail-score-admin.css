@@ -1,0 +1,206 @@
+/**
+ * @file
+ * RAIL Score admin styles.
+ */
+
+/* Dashboard Styles */
+.rail-score-dashboard {
+  padding: 20px;
+}
+
+.rail-score-dashboard h2 {
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.rail-score-dashboard h3 {
+  margin-top: 30px;
+  margin-bottom: 10px;
+  color: #555;
+}
+
+/* Statistics Summary */
+.stats-summary {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+}
+
+.stat-item {
+  background: #f5f5f5;
+  padding: 15px 20px;
+  border-radius: 4px;
+  border-left: 4px solid #0073aa;
+  flex: 1;
+  min-width: 200px;
+}
+
+.stat-item strong {
+  display: block;
+  margin-bottom: 5px;
+  color: #555;
+  font-size: 14px;
+}
+
+.stat-item .stat-value {
+  font-size: 24px;
+  font-weight: bold;
+  color: #0073aa;
+}
+
+/* Dashboard Table */
+.rail-score-dashboard table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+.rail-score-dashboard table thead {
+  background: #f5f5f5;
+}
+
+.rail-score-dashboard table th,
+.rail-score-dashboard table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.rail-score-dashboard table th {
+  font-weight: 600;
+  color: #333;
+}
+
+.rail-score-dashboard table tbody tr:hover {
+  background: #f9f9f9;
+}
+
+/* Status Classes */
+.status-pass {
+  color: #28a745;
+  font-weight: 600;
+}
+
+.status-warning {
+  color: #dc3545;
+  font-weight: 600;
+}
+
+.rail-score-dashboard table tr.warning td {
+  background: #fff3cd;
+}
+
+/* RAIL Score Widget */
+.rail-score-widget {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 15px;
+  margin: 10px 0;
+}
+
+.rail-score-widget .score-display {
+  font-size: 32px;
+  font-weight: bold;
+  text-align: center;
+  padding: 20px;
+  margin: 10px 0;
+  border-radius: 4px;
+}
+
+.rail-score-widget .score-display.score-high {
+  color: #28a745;
+  background: #d4edda;
+  border: 2px solid #28a745;
+}
+
+.rail-score-widget .score-display.score-medium {
+  color: #ffc107;
+  background: #fff3cd;
+  border: 2px solid #ffc107;
+}
+
+.rail-score-widget .score-display.score-low {
+  color: #dc3545;
+  background: #f8d7da;
+  border: 2px solid #dc3545;
+}
+
+.rail-score-widget .dimensions-list {
+  list-style: none;
+  padding: 0;
+  margin: 15px 0;
+}
+
+.rail-score-widget .dimensions-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.rail-score-widget .dimensions-list li:last-child {
+  border-bottom: none;
+}
+
+.rail-score-widget .dimension-name {
+  font-weight: 500;
+  color: #555;
+}
+
+.rail-score-widget .dimension-score {
+  font-weight: 600;
+  color: #0073aa;
+}
+
+/* Configuration Form */
+.rail-score-config-form fieldset {
+  margin-bottom: 25px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 20px;
+  background: #fafafa;
+}
+
+.rail-score-config-form fieldset legend {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  padding: 0 10px;
+}
+
+.rail-score-config-form .form-item {
+  margin-bottom: 15px;
+}
+
+/* Connection Test Result */
+#connection-test-result {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 4px;
+}
+
+#connection-test-result .messages {
+  margin: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .stats-summary {
+    flex-direction: column;
+  }
+
+  .stat-item {
+    width: 100%;
+  }
+
+  .rail-score-dashboard table {
+    font-size: 14px;
+  }
+
+  .rail-score-dashboard table th,
+  .rail-score-dashboard table td {
+    padding: 8px;
+  }
+}

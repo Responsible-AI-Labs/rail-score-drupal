@@ -1,0 +1,165 @@
+<?php
+
+/**
+ * @file
+ * RAIL Score module file.
+ *
+ * Provides hooks and helper functions for RAIL Score integration.
+ */
+
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\ContentEntityInterface;
+use Drupal\node\NodeInterface;
+use Drupal\Core\Routing\RouteMatchInterface;
+
+/**
+ * Implements hook_help().
+ */
+function rail_score_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    case 'help.page.rail_score':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('The RAIL Score module integrates the RAIL Score API for responsible AI content evaluation and moderation.') . '</p>';
+      $output .= '<h3>' . t('Features') . '</h3>';
+      $output .= '<ul>';
+      $output .= '<li>' . t('Automatic content evaluation on save') . '</li>';
+      $output .= '<li>' . t('Configurable score thresholds') . '</li>';
+      $output .= '<li>' . t('Multiple evaluation dimensions: safety, privacy, fairness, transparency, accountability, reliability, inclusivity, user_impact') . '</li>';
+      $output .= '<li>' . t('Basic and deep evaluation modes') . '</li>';
+      $output .= '<li>' . t('Dashboard with usage statistics') . '</li>';
+      $output .= '<li>' . t('Auto-unpublish low-scoring content') . '</li>';
+      $output .= '<li>' . t('Compliance checking (GDPR, CCPA, HIPAA, EU AI Act, India DPDP, India AI Gov)') . '</li>';
+      $output .= '</ul>';
+      $output .= '<h3>' . t('Configuration') . '</h3>';
+      $output .= '<p>' . t('Configure the module at <a href="@url">RAIL Score Settings</a>.', [
+        '@url' => '/admin/config/content/rail-score',
+      ]) . '</p>';
+      $output .= '<h3>' . t('Usage') . '</h3>';
+      $output .= '<p>' . t('Once configured, content will be automatically evaluated when saved. View statistics on the <a href="@dashboard">RAIL Score Dashboard</a>.', [
+        '@dashboard' => '/admin/reports/rail-score',
+      ]) . '</p>';
+      return $output;
+
+    case 'rail_score.settings':
+      return '<p>' . t('Configure RAIL Score API settings and evaluation options.') . '</p>';
+
+    case 'rail_score.dashboard':
+      return '<p>' . t('View RAIL Score usage statistics and recent content evaluations.') . '</p>';
+  }
+}
+
+/**
+ * Implements hook_entity_presave().
+ */
+function rail_score_entity_presave(EntityInterface $entity) {
+  // Only process nodes.
+  if (!$entity instanceof NodeInterface) {
+    return;
+  }
+
+  // Get the event subscriber service and trigger evaluation.
+  $event_subscriber = \Drupal::service('rail_score.entity_subscriber');
+  if (method_exists($event_subscriber, 'evaluateEntity')) {
+    $event_subscriber->evaluateEntity($entity);
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function rail_score_theme($existing, $type, $theme, $path) {
+  return [
+    'rail_score_dashboard' => [
+      'variables' => [
+        'stats' => NULL,
+        'recent_evaluations' => NULL,
+      ],
+      'template' => 'rail-score-dashboard',
+    ],
+    'rail_score_widget' => [
+      'variables' => [
+        'score' => NULL,
+        'dimensions' => NULL,
+        'threshold' => NULL,
+      ],
+      'template' => 'rail-score-widget',
+    ],
+  ];
+}
+
+/**
+ * Implements hook_entity_bundle_field_info_alter().
+ */
+function rail_score_entity_bundle_field_info_alter(&$fields, $entity_type, $bundle) {
+  // Add validation constraint to field_rail_score if it exists.
+  if ($entity_type === 'node' && !empty($fields['field_rail_score'])) {
+    $fields['field_rail_score']->addConstraint('Range', [
+      'min' => 0,
+      'max' => 10,
+    ]);
+  }
+}
+
+/**
+ * Implements hook_cron().
+ */
+function rail_score_cron() {
+  // Future: Add cron tasks for batch evaluation or cleanup.
+  $config = \Drupal::config('rail_score.settings');
+
+  // Log cron run.
+  \Drupal::logger('rail_score')->info('[RAIL Score] Cron run completed');
+}
+
+/**
+ * Implements hook_module_implements_alter().
+ */
+function rail_score_module_implements_alter(&$implementations, $hook) {
+  // Ensure rail_score_entity_presave runs last.
+  if ($hook === 'entity_presave' && isset($implementations['rail_score'])) {
+    $group = $implementations['rail_score'];
+    unset($implementations['rail_score']);
+    $implementations['rail_score'] = $group;
+  }
+}
+
+/**
+ * Get RAIL Score for an entity.
+ *
+ * Helper function to retrieve the RAIL Score for an entity.
+ *
+ * @param \Drupal\Core\Entity\EntityInterface $entity
+ *   The entity to get the score for.
+ *
+ * @return float|null
+ *   The RAIL Score, or NULL if not available.
+ */
+function rail_score_get_score(EntityInterface $entity) {
+  if ($entity->hasField('field_rail_score') && !$entity->get('field_rail_score')->isEmpty()) {
+    return (float) $entity->get('field_rail_score')->value;
+  }
+  return NULL;
+}
+
+/**
+ * Check if content passes RAIL Score threshold.
+ *
+ * @param \Drupal\Core\Entity\EntityInterface $entity
+ *   The entity to check.
+ *
+ * @return bool
+ *   TRUE if content passes threshold, FALSE otherwise.
+ */
+function rail_score_passes_threshold(EntityInterface $entity) {
+  $score = rail_score_get_score($entity);
+
+  if ($score === NULL) {
+    return TRUE;
+  }
+
+  $config = \Drupal::config('rail_score.settings');
+  $threshold = (float) $config->get('threshold') ?? 7.0;
+
+  return $score >= $threshold;
+}

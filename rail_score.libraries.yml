@@ -1,0 +1,12 @@
+# Asset libraries for RAIL Score module
+
+admin:
+  version: 1.0.0
+  css:
+    theme:
+      css/rail-score-admin.css: {}
+  js:
+    js/rail-score-admin.js: {}
+  dependencies:
+    - core/drupal
+    - core/jquery

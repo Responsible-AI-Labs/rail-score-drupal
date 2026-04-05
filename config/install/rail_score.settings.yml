@@ -1,0 +1,24 @@
+api_key: ''
+base_url: 'https://api.responsibleailabs.ai'
+# Evaluation
+mode: 'basic'
+auto_evaluate: true
+threshold: 7.0
+auto_unpublish: false
+dimensions: []
+enabled_content_types: []
+# Evaluation context
+domain: 'general'
+usecase: 'general'
+include_explanations: false
+include_issues: false
+include_suggestions: false
+# Compliance
+enable_compliance: false
+compliance_frameworks: []
+compliance_strict_mode: false
+compliance_threshold: 5.0
+# Telemetry
+review_queue_threshold: 2.0
+# Drupal AI integration
+enable_ai_integration: false

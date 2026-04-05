@@ -1,0 +1,76 @@
+# Schema for rail_score configuration
+rail_score.settings:
+  type: config_object
+  label: 'RAIL Score settings'
+  mapping:
+    api_key:
+      type: string
+      label: 'API Key'
+    base_url:
+      type: string
+      label: 'Base URL'
+    # Evaluation
+    mode:
+      type: string
+      label: 'Evaluation mode (basic or deep)'
+    auto_evaluate:
+      type: boolean
+      label: 'Auto evaluate on save'
+    threshold:
+      type: float
+      label: 'Score threshold'
+    auto_unpublish:
+      type: boolean
+      label: 'Auto unpublish low-scoring content'
+    dimensions:
+      type: sequence
+      label: 'Dimensions to evaluate'
+      sequence:
+        type: string
+        label: 'Dimension'
+    enabled_content_types:
+      type: sequence
+      label: 'Enabled content types'
+      sequence:
+        type: string
+        label: 'Content type'
+    # Evaluation context
+    domain:
+      type: string
+      label: 'Content domain'
+    usecase:
+      type: string
+      label: 'Use case'
+    include_explanations:
+      type: boolean
+      label: 'Include per-dimension text explanations'
+    include_issues:
+      type: boolean
+      label: 'Include per-dimension issue tags'
+    include_suggestions:
+      type: boolean
+      label: 'Include improvement suggestions'
+    # Compliance
+    enable_compliance:
+      type: boolean
+      label: 'Enable compliance checking'
+    compliance_frameworks:
+      type: sequence
+      label: 'Compliance frameworks'
+      sequence:
+        type: string
+        label: 'Framework'
+    compliance_strict_mode:
+      type: boolean
+      label: 'Compliance strict mode'
+    compliance_threshold:
+      type: float
+      label: 'Compliance incident threshold'
+    # Telemetry
+    review_queue_threshold:
+      type: float
+      label: 'Review queue threshold'
+    # Drupal AI integration
+    enable_ai_integration:
+      type: boolean
+      label: 'Enable Drupal AI module integration'

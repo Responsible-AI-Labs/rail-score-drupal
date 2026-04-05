@@ -1,0 +1,24 @@
+services:
+  rail_score.audit_logger:
+    class: Drupal\rail_score\Logger\RailScoreAuditLogger
+    arguments: ['@database', '@logger.factory', '@current_user']
+
+  rail_score.review_queue:
+    class: Drupal\rail_score\Queue\RailScoreReviewQueue
+    arguments: ['@database', '@logger.factory', '@current_user', '@rail_score.audit_logger']
+
+  rail_score.client:
+    class: Drupal\rail_score\RailScoreClient
+    arguments: ['@config.factory', '@http_client', '@logger.factory', '@rail_score.audit_logger']
+
+  rail_score.entity_subscriber:
+    class: Drupal\rail_score\EventSubscriber\EntityEventSubscriber
+    arguments: ['@rail_score.client', '@config.factory', '@messenger', '@rail_score.review_queue', '@rail_score.audit_logger']
+    tags:
+      - { name: event_subscriber }
+
+  rail_score.ai_response_scorer:
+    class: Drupal\rail_score\EventSubscriber\AiResponseScorerSubscriber
+    arguments: ['@rail_score.client', '@config.factory', '@messenger', '@rail_score.audit_logger', '@rail_score.review_queue']
+    tags:
+      - { name: event_subscriber }
