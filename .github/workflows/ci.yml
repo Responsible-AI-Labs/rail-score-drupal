@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer, cs2pr
+
+      - name: PHP syntax check
+        run: |
+          find . -path ./vendor -prune -o \
+            \( -name '*.php' -o -name '*.module' -o -name '*.install' -o -name '*.inc' -o -name '*.theme' \) \
+            -print0 | xargs -0 -r -n1 -P4 php -l
+
+      - name: Install Drupal coding standards
+        run: |
+          composer global require --no-interaction drupal/coder:^8.3
+          echo "$(composer global config home)/vendor/bin" >> "$GITHUB_PATH"
+
+      - name: Register PHPCS standards
+        run: phpcs --config-set installed_paths "$(composer global config home)/vendor/drupal/coder/coder_sniffer"
+
+      # Style check against Drupal standards. Reported inline but non-blocking
+      # for now so pre-existing style debt does not block merges. Flip to
+      # enforcing by removing continue-on-error once the tree is clean.
+      - name: PHPCS (Drupal, DrupalPractice)
+        continue-on-error: true
+        run: |
+          phpcs -q --report=checkstyle \
+            --standard=Drupal,DrupalPractice \
+            --extensions=php,module,inc,install,test,theme,info.yml \
+            --ignore=vendor,node_modules . | cs2pr
